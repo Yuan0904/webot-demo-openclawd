@@ -1,0 +1,2 @@
+# Office COM 直接调用依赖
+pywin32>=300  # Windows系统需要，提供COM支持

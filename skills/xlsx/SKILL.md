@@ -1,8 +1,30 @@
 ---
+
 name: xlsx
 description: "Use this skill any time a spreadsheet file is the primary input or output. This means any task where the user wants to: open, read, edit, or fix an existing .xlsx, .xlsm, .csv, or .tsv file (e.g., adding columns, computing formulas, formatting, charting, cleaning messy data); create a new spreadsheet from scratch or from other data sources; or convert between tabular file formats. Trigger especially when the user references a spreadsheet file by name or path — even casually (like \"the xlsx in my downloads\") — and wants something done to it or produced from it. Also trigger for cleaning or restructuring messy tabular data files (malformed rows, misplaced headers, junk data) into proper spreadsheets. The deliverable must be a spreadsheet file. Do NOT trigger when the primary deliverable is a Word document, HTML report, standalone Python script, database pipeline, or Google Sheets API integration, even if tabular data is involved."
 license: Proprietary. LICENSE.txt has complete terms
+
 ---
+
+## ⚠️ Important: Choose the Right Tool
+
+| Scenario | Recommended Tool |
+|----------|-----------------|
+| Windows with WPS/Excel, need real-time operations or have Unicode text | `ExcelBridgeDirect` (优先WPS COM) |
+| Any system, need to preserve formulas | `openpyxl` |
+| Data analysis, bulk operations | `pandas` |
+| Need formula recalculation | `recalc.py` |
+
+**For Windows users with Chinese/Unicode text**, always use `ExcelBridgeDirect` to avoid garbled characters.
+
+## Language Output Preference (Chinese-first)
+
+When the user's language is Chinese (or the user asks for Chinese), default to **Chinese labels and Chinese result text** in spreadsheet write-backs and summaries.
+
+- Use concise Chinese metric labels (e.g., `最大值` / `最小值` / `总和`).
+- Do not translate into English unless the user explicitly requests English.
+- Preserve user-provided Chinese terminology in headers/labels whenever possible.
+- If instruction is ambiguous, prefer Chinese output for labels in cells.
 
 # Requirements for Outputs
 
@@ -73,6 +95,85 @@ A user may ask you to create, edit, or analyze the contents of an .xlsx file. Yo
 
 **LibreOffice Required for Formula Recalculation**: You can assume LibreOffice is installed for recalculating formula values using the `scripts/recalc.py` script. The script automatically configures LibreOffice on first run, including in sandboxed environments where Unix sockets are restricted (handled by `scripts/office/soffice.py`)
 
+## 📢 New Feature: Direct COM Calling (Windows Only)
+
+**Version X.X+** - Excel skill now supports direct COM calling, completely bypassing PowerShell and perfectly solving character encoding issues for all languages.
+
+### Key Benefits
+- ✅ **Perfect Unicode Support**: No more garbled characters with any language
+- ✅ **Real-time Operation**: See changes immediately, can show WPS/Excel interface
+- ✅ **Batch Operations**: Write ranges, format cells in one call
+- ✅ **WPS First**: Prioritizes WPS COM (`ket.Application` / `KET.Application`), with Office fallback
+
+### Quick Start Examples
+
+#### Write Data with Perfect Unicode Support
+```python
+from excel.scripts.excel_helper import write_to_excel
+
+# Any language text works perfectly
+data = [
+    ["Column1", "Column2", "Column3"],
+    ["Value1", 100, 200],
+    ["Value2", 300, 400]
+]
+
+result = write_to_excel("output.xlsx", data, start_cell="A1")
+
+#### Quick Cell Operations
+```python
+from excel.scripts.excel_helper import quick_write, quick_read
+
+# Write any text directly
+quick_write("file.xlsx", "A1", "任何语言的文本")
+
+# Read values
+result = quick_read("file.xlsx", "A1")
+print(result["data"]["value"])
+```
+
+#### Advanced Real-time Operations
+```python
+from excel.scripts.excel_bridge_direct import ExcelBridgeDirect
+
+# Create bridge (auto-detects Windows)
+bridge = ExcelBridgeDirect()
+
+# Open file (you can see Excel if visible=True)
+bridge.open("workbook.xlsx", visible=True)
+
+# Batch write with any language
+data = [
+    ["Header1", "Header2", "Header3"],
+    ["Data1", 100, 200],
+    ["Data2", 300, 400]
+]
+bridge.write_range("A1", data)
+
+# Apply formatting
+bridge.format_range("B2:C3", number_format="$#,##0")
+bridge.format_range("A1:C1", bold=True)
+
+# Add formulas
+bridge.set_formula("D2", "=SUM(B2:C2)")
+
+# Save and close
+bridge.close(save=True)
+bridge.quit()
+```
+
+### How It Works
+
+The system automatically chooses the best method:
+
+| System | WPS/Office Installed | Method Used | Unicode Support |
+|--------|----------------------|-------------|-----------------|
+| Windows | ✅ WPS available | Direct COM (WPS first) | ✅ Perfect |
+| Windows | ✅ Office only | Direct COM (Office fallback) | ✅ Good |
+| macOS/Linux | N/A | Python/OpenPyXL (existing) | ✅ Good |
+
+**You don't need to change your code** - use the same functions and the bridge tries WPS COM first.
+
 ## Reading and analyzing data
 
 ### Data analysis with pandas
@@ -130,9 +231,11 @@ sheet['D20'] = '=AVERAGE(D2:D19)'
 This applies to ALL calculations - totals, percentages, ratios, differences, etc. The spreadsheet should be able to recalculate when source data changes.
 
 ## Common Workflow
-1. **Choose tool**: pandas for data, openpyxl for formulas/formatting
+1. **Choose tool**: pandas for data, openpyxl for formulas/formatting, or **ExcelBridgeDirect for real-time COM operations**
 2. **Create/Load**: Create new workbook or load existing file
 3. **Modify**: Add/edit data, formulas, and formatting
+   - **For Windows with Excel installed**: Use ExcelBridgeDirect (best performance, perfect Unicode support)
+   - **For other cases**: Use openpyxl or pandas
 4. **Save**: Write to file
 5. **Recalculate formulas (MANDATORY IF USING FORMULAS)**: Use the scripts/recalc.py script
    ```bash
@@ -175,6 +278,57 @@ sheet['A1'].alignment = Alignment(horizontal='center')
 sheet.column_dimensions['A'].width = 20
 
 wb.save('output.xlsx')
+```
+
+### Real-time Excel operations with Direct COM (Windows only)
+
+For Windows systems with Excel installed, use ExcelBridgeDirect for real-time operations with perfect Unicode support:
+
+```python
+from excel.scripts.excel_bridge_direct import ExcelBridgeDirect
+
+# Create bridge and open file
+bridge = ExcelBridgeDirect()
+bridge.open('file.xlsx', visible=False)  # Set visible=True to see Excel
+
+# Write data with perfect Unicode support
+bridge.write_cell('A1', '部门')  # Any language works perfectly
+bridge.write_cell('A2', '销售额')
+
+# Write range of data
+data = [
+    ['部门', '销售额', '销量'],
+    ['华北区', 30355, 370],
+    ['华南区', 35800, 430]
+]
+bridge.write_range('A1', data)
+
+# Apply formatting
+bridge.format_range('A1:C1', bold=True)
+bridge.format_range('B2:C3', number_format='$#,##0')
+
+# Add formulas
+bridge.set_formula('D2', '=SUM(B2:C2)')
+
+# Save and close
+bridge.close(save=True)
+bridge.quit()
+```
+
+For even simpler usage, use the helper functions:
+
+```python
+from excel.scripts.excel_helper import write_to_excel, quick_write, quick_read, edit_active_excel
+
+# Write data to Excel (automatically uses best method)
+write_to_excel('file.xlsx', data, start_cell='A1')
+
+# Quick cell operations
+quick_write('file.xlsx', 'A1', '任何语言的文本')
+value = quick_read('file.xlsx', 'A1')
+
+# Edit currently active WPS workbook
+edit_active_excel('B2', '在线修改内容')
 ```
 
 ### Editing existing Excel files
@@ -267,6 +421,7 @@ The script returns JSON with error details:
 ### Library Selection
 - **pandas**: Best for data analysis, bulk operations, and simple data export
 - **openpyxl**: Best for complex formatting, formulas, and Excel-specific features
+- **ExcelBridgeDirect**: Best for real-time operations on Windows with perfect Unicode support (use when user needs immediate feedback or has Unicode text)
 
 ### Working with openpyxl
 - Cell indices are 1-based (row=1, column=1 refers to cell A1)
@@ -290,3 +445,22 @@ The script returns JSON with error details:
 - Add comments to cells with complex formulas or important assumptions
 - Document data sources for hardcoded values
 - Include notes for key calculations and model sections
+
+### Working with ExcelBridgeDirect (Windows only)
+```python
+from excel.scripts.excel_bridge_direct import ExcelBridgeDirect
+
+bridge = ExcelBridgeDirect()
+bridge.open("file.xlsx", visible=True)  # Set visible=True to see Excel
+
+# Write any language directly
+bridge.write_cell("A1", "任何语言的文本")
+
+# Batch operations
+bridge.write_range("A2", [
+    ["Item A", 100, 200],
+    ["Item B", 300, 400]
+])
+
+bridge.close(save=True)
+bridge.quit()
