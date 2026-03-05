@@ -1,0 +1,15 @@
+{
+  "name": "@webbot/copilot-proxy",
+  "version": "2026.2.10",
+  "private": true,
+  "description": "WebBot Copilot Proxy provider plugin",
+  "type": "module",
+  "devDependencies": {
+    "webbot": "workspace:*"
+  },
+  "webbot": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}

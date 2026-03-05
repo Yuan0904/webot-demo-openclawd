@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__git-server__git_log",
+      "mcp__git-server__git_show",
+      "Bash(find:*)",
+      "Bash(ls:*)",
+      "Bash(grep:*)",
+      "Bash(npx tsc:*)",
+      "mcp__playwright__browser_type",
+      "mcp__playwright__browser_evaluate",
+      "mcp__playwright__browser_snapshot",
+      "mcp__git-server__git_diff_unstaged",
+      "mcp__playwright__browser_navigate",
+      "Bash(done)",
+      "Bash(du:*)",
+      "Bash(__NEW_LINE_72b3a8520d8a2457__ echo \"=== Total files count ===\")",
+      "Bash(xargs:*)",
+      "mcp__playwright__browser_click"
+    ]
+  }
+}
