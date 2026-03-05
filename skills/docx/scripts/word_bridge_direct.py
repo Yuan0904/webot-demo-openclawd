@@ -13,75 +13,63 @@ if str(common_dir) not in sys.path:
     sys.path.insert(0, str(common_dir))
 
 from common.com_direct import WordCOM
-from common.platform_check import is_windows
+from common.office_bridge_base import DirectCOMBridgeBase
 from common.utils import setup_logger
 
-logger = setup_logger('word_bridge_direct')
+logger = setup_logger("word_bridge_direct")
 
 
-class WordBridgeDirect:
+class WordBridgeDirect(DirectCOMBridgeBase):
     """Word桥接器 - 直接COM调用"""
 
     def __init__(self):
-        if not is_windows():
-            raise RuntimeError("WordBridgeDirect is only available on Windows")
-
-        self.word = WordCOM()
-        self.active_file = None
+        super().__init__(
+            script_dir=current_dir,
+            bridge_name="WordBridgeDirect",
+            client_attr="word",
+            app_client=WordCOM(),
+        )
+        self._modified = False
+        self._pre_snapshot_id = None
         logger.info("WordBridgeDirect initialized")
 
+    def _reset_state(self):
+        self._modified = False
+        self._pre_snapshot_id = None
 
     def open(self, file_path: str, visible: bool = False) -> Dict[str, Any]:
         """打开Word文档"""
-        result = self.word.open(file_path, visible)
+        result = super().open(file_path, visible)
         if result.get("success"):
-            opened_path = result.get("data", {}).get("path")
-            self.active_file = opened_path or file_path
-            self._modified = False
-            self._pre_snapshot_id = None
+            self._reset_state()
         return result
 
     def attach_active(self, visible: bool = True) -> Dict[str, Any]:
         """附加到当前WPS/Word已打开文档"""
-        result = self.word.attach_active(visible)
+        result = super().attach_active(visible)
         if result.get("success"):
-            self.active_file = result.get("data", {}).get("path")
-            self._modified = False
-            self._pre_snapshot_id = None
+            self._reset_state()
         return result
 
     def new(self) -> Dict[str, Any]:
         """新建Word文档"""
-        result = self.word.new()
+        result = super().new(fallback_name="新建文档.docx")
         if result.get("success"):
-            self.active_file = "新建文档.docx"
-            self._modified = False
-            self._pre_snapshot_id = None
+            self._reset_state()
         return result
 
     def close(self, save: bool = True) -> Dict[str, Any]:
         """关闭文档"""
-        try:
-            if self.word.document:
-                if save:
-                    self.word.document.Save()
-                    if self._modified:
-                        self._create_snapshot("post", parent_id=self._pre_snapshot_id)
-                self.word.document.Close()
-                self.word.document = None
-
-            self.active_file = None
-            self._modified = False
-            self._pre_snapshot_id = None
-            return {"success": True, "message": "Word document closed"}
-        except Exception as e:
-            return {"success": False, "message": str(e)}
-
-    def quit(self):
-        """退出Word"""
-        self.word.quit()
+        result = super().close(save)
+        if result.get("success"):
+            self._reset_state()
+        return result
 
     # ========== 写入操作（完美支持中文）==========
+
+    def _ensure_pre_snapshot(self):
+        """兼容保留：当前不做快照，仅保留调用点"""
+        return None
 
     def write_text(self, text: str, position: str = "end") -> Dict[str, Any]:
         """写入文本"""
@@ -111,13 +99,12 @@ class WordBridgeDirect:
                 bookmark.Range.Text = text
                 self._modified = True
                 return {"success": True, "message": f"Written at bookmark {bookmark_name}"}
-            else:
-                return {"success": False, "message": f"Bookmark {bookmark_name} not found"}
+
+            return {"success": False, "message": f"Bookmark {bookmark_name} not found"}
         except Exception as e:
             return {"success": False, "message": str(e)}
 
-    def replace_text(self, find_text: str, replace_text: str,
-                     replace_all: bool = True) -> Dict[str, Any]:
+    def replace_text(self, find_text: str, replace_text: str, replace_all: bool = True) -> Dict[str, Any]:
         """替换文本"""
         self._ensure_pre_snapshot()
         result = self.word.replace_text(find_text, replace_text, replace_all)
@@ -125,9 +112,14 @@ class WordBridgeDirect:
             self._modified = True
         return result
 
-    def format_text(self, bold: bool = False, italic: bool = False,
-                    font_size: int = None, font_name: str = None,
-                    font_color: str = None) -> Dict[str, Any]:
+    def format_text(
+        self,
+        bold: bool = False,
+        italic: bool = False,
+        font_size: int = None,
+        font_name: str = None,
+        font_color: str = None,
+    ) -> Dict[str, Any]:
         """格式化选中的文本"""
         self._ensure_pre_snapshot()
         try:
@@ -170,7 +162,6 @@ class WordBridgeDirect:
 
             paragraphs = []
             para_count = self.word.document.Paragraphs.Count
-
             if count:
                 para_count = min(count, para_count)
 
@@ -179,15 +170,15 @@ class WordBridgeDirect:
                 paragraphs.append({
                     "index": i,
                     "text": para.Range.Text.strip(),
-                    "style": para.Style
+                    "style": para.Style,
                 })
 
             return {
                 "success": True,
                 "data": {
                     "total": self.word.document.Paragraphs.Count,
-                    "paragraphs": paragraphs
-                }
+                    "paragraphs": paragraphs,
+                },
             }
         except Exception as e:
             return {"success": False, "message": str(e)}
@@ -202,13 +193,12 @@ class WordBridgeDirect:
                 return {"success": False, "message": "No document open"}
 
             selection = self.word.app.Selection
-
             if break_type == "page":
-                selection.InsertBreak(7)  # 7 = wdPageBreak
+                selection.InsertBreak(7)  # wdPageBreak
             elif break_type == "line":
-                selection.InsertBreak(6)  # 6 = wdLineBreak
+                selection.InsertBreak(6)  # wdLineBreak
             elif break_type == "column":
-                selection.InsertBreak(8)  # 8 = wdColumnBreak
+                selection.InsertBreak(8)  # wdColumnBreak
 
             self._modified = True
             return {"success": True, "message": f"{break_type} break inserted"}
@@ -222,15 +212,14 @@ class WordBridgeDirect:
                 return {"success": False, "message": "No document open"}
 
             selection = self.word.app.Selection
-
             if target == "start":
                 selection.HomeKey(Unit=6)
             elif target == "end":
                 selection.EndKey(Unit=6)
             elif target == "page" and value:
-                selection.GoTo(What=1, Which=1, Count=value)  # 1 = wdGoToPage
+                selection.GoTo(What=1, Which=1, Count=value)  # wdGoToPage
             elif target == "line" and value:
-                selection.GoTo(What=2, Which=1, Count=value)  # 2 = wdGoToLine
+                selection.GoTo(What=2, Which=1, Count=value)  # wdGoToLine
 
             return {"success": True, "message": f"Went to {target}"}
         except Exception as e:
