@@ -1,0 +1,34 @@
+{
+  "docId": "6809cdd40e60ea89",
+  "filePath": "E:\\hzbankWork\\webbot\\测试用例\\excel表格测试源文件1.xlsx",
+  "versions": [
+    {
+      "id": "f6b59b2c-020d-4f45-821f-a78f4d90ae20",
+      "filePath": "E:\\hzbankWork\\webbot\\测试用例\\excel表格测试源文件1.xlsx",
+      "snapshotPath": "E:\\hzbankWork\\webbot\\webot-demo-openclawd\\webot-demo-openclawd\\.webbot\\versions\\6809cdd40e60ea89\\1772606982016_pre_f6b59b2c-020d-4f45-821f-a78f4d90ae20.xlsx",
+      "stage": "pre",
+      "createdAt": 1772606982016,
+      "sizeBytes": 13336,
+      "sha256": "9e1c7bae9d0a4e9261a7f8e83360851ad97ad63a35c31616710aee705545babe"
+    },
+    {
+      "id": "bf8e1736-5ca1-4e09-aa95-3ed6ec92e5c5",
+      "filePath": "E:\\hzbankWork\\webbot\\测试用例\\excel表格测试源文件1.xlsx",
+      "snapshotPath": "E:\\hzbankWork\\webbot\\webot-demo-openclawd\\webot-demo-openclawd\\.webbot\\versions\\6809cdd40e60ea89\\1772607001346_pre_bf8e1736-5ca1-4e09-aa95-3ed6ec92e5c5.xlsx",
+      "stage": "pre",
+      "createdAt": 1772607001346,
+      "sizeBytes": 13484,
+      "sha256": "6aa6ef17c65e56fee4e838856b74043a2e8d585a9872ff85c4e4fb2ae8b4d3d6"
+    },
+    {
+      "id": "08852a91-aa9a-4f67-8b05-0c3e6f2fabbc",
+      "filePath": "E:\\hzbankWork\\webbot\\测试用例\\excel表格测试源文件1.xlsx",
+      "snapshotPath": "E:\\hzbankWork\\webbot\\webot-demo-openclawd\\webot-demo-openclawd\\.webbot\\versions\\6809cdd40e60ea89\\1772607768416_pre_08852a91-aa9a-4f67-8b05-0c3e6f2fabbc.xlsx",
+      "stage": "pre",
+      "createdAt": 1772607768416,
+      "sizeBytes": 13332,
+      "sha256": "a991715e7483ae46108d5f3f7bdef77bf074ca7ee18eff11876d93832659a9db"
+    }
+  ],
+  "currentVersionId": "f6b59b2c-020d-4f45-821f-a78f4d90ae20"
+}

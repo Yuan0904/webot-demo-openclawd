@@ -1,0 +1,15 @@
+{
+  "name": "@webbot/google-antigravity-auth",
+  "version": "2026.2.10",
+  "private": true,
+  "description": "WebBot Google Antigravity OAuth provider plugin",
+  "type": "module",
+  "devDependencies": {
+    "webbot": "workspace:*"
+  },
+  "webbot": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}

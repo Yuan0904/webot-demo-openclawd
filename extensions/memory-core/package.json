@@ -1,0 +1,18 @@
+{
+  "name": "@webbot/memory-core",
+  "version": "2026.2.10",
+  "private": true,
+  "description": "WebBot core memory search plugin",
+  "type": "module",
+  "devDependencies": {
+    "webbot": "workspace:*"
+  },
+  "peerDependencies": {
+    "webbot": ">=2026.1.26"
+  },
+  "webbot": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}
